@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.Map;
+import jakarta.servlet.ServletException;
 
 @RestController
 @RequestMapping("/auth")
@@ -44,7 +45,7 @@ public class AuthController {
     @PostMapping("/login")
     public void login(@RequestBody LoginRequest request, 
                      HttpServletRequest servletRequest,
-                     HttpServletResponse servletResponse) throws IOException {
+                     HttpServletResponse servletResponse) throws IOException, ServletException {
         try {
             UsernamePasswordAuthenticationToken authToken = 
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword());
@@ -60,7 +61,7 @@ public class AuthController {
     @PostMapping("/otp")
     public void verifyOtp(@RequestBody OtpRequest request,
                          HttpServletRequest servletRequest,
-                         HttpServletResponse servletResponse) throws IOException {
+                         HttpServletResponse servletResponse) throws IOException, ServletException {
         
         // Check if OTP step is enabled
         if (!settingsService.isOtpEnabled()) {
@@ -85,7 +86,7 @@ public class AuthController {
     @PostMapping("/onboard")
     public void completeOnboarding(@RequestBody OnboardingService.OnboardingData data,
                                   HttpServletRequest servletRequest,
-                                  HttpServletResponse servletResponse) throws IOException {
+                                  HttpServletResponse servletResponse) throws IOException, ServletException {
         
         // Check if onboarding step is enabled
         if (!settingsService.isOnboardingEnabled()) {

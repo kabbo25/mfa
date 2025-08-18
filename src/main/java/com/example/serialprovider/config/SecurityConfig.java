@@ -1,6 +1,10 @@
 package com.example.serialprovider.config;
 
 import com.example.serialprovider.auth.MultiFactorAuthenticationManager;
+import com.example.serialprovider.auth.authorization.AdminAuthorizationManager;
+import com.example.serialprovider.auth.authorization.ApiAuthorizationManager;
+import com.example.serialprovider.auth.authorization.OnboardingAuthorizationManager;
+import com.example.serialprovider.auth.authorization.OtpAuthorizationManager;
 import com.example.serialprovider.auth.handler.MultiFactorAuthenticationFailureHandler;
 import com.example.serialprovider.auth.handler.MultiFactorAuthenticationSuccessHandler;
 import org.springframework.context.annotation.Bean;
@@ -16,13 +20,25 @@ public class SecurityConfig {
     private final MultiFactorAuthenticationManager authenticationManager;
     private final MultiFactorAuthenticationSuccessHandler successHandler;
     private final MultiFactorAuthenticationFailureHandler failureHandler;
+    private final AdminAuthorizationManager adminAuthorizationManager;
+    private final ApiAuthorizationManager apiAuthorizationManager;
+    private final OtpAuthorizationManager otpAuthorizationManager;
+    private final OnboardingAuthorizationManager onboardingAuthorizationManager;
 
     public SecurityConfig(MultiFactorAuthenticationManager authenticationManager,
                            MultiFactorAuthenticationSuccessHandler successHandler,
-                           MultiFactorAuthenticationFailureHandler failureHandler) {
+                           MultiFactorAuthenticationFailureHandler failureHandler,
+                           AdminAuthorizationManager adminAuthorizationManager,
+                           ApiAuthorizationManager apiAuthorizationManager,
+                           OtpAuthorizationManager otpAuthorizationManager,
+                           OnboardingAuthorizationManager onboardingAuthorizationManager) {
         this.authenticationManager = authenticationManager;
         this.successHandler = successHandler;
         this.failureHandler = failureHandler;
+        this.adminAuthorizationManager = adminAuthorizationManager;
+        this.apiAuthorizationManager = apiAuthorizationManager;
+        this.otpAuthorizationManager = otpAuthorizationManager;
+        this.onboardingAuthorizationManager = onboardingAuthorizationManager;
     }
 
     @Bean
@@ -30,11 +46,13 @@ public class SecurityConfig {
         http.csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/auth/**").permitAll()
-                .requestMatchers("/admin/**").permitAll() // For demo purposes - in production add proper admin auth
+                .requestMatchers("/admin/**").access(adminAuthorizationManager)
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/", "/login", "/otp", "/onboarding", "/dashboard", 
                                "/*.html", "/js/**", "/css/**", "/favicon.ico").permitAll()
-                .requestMatchers("/api/**").hasAuthority("FULLY_AUTHENTICATED")
+                .requestMatchers("/otp").access(otpAuthorizationManager)
+                .requestMatchers("/onboarding").access(onboardingAuthorizationManager)
+                .requestMatchers("/api/**").access(apiAuthorizationManager)
                 .anyRequest().authenticated()
             )
             .authenticationManager(authenticationManager)

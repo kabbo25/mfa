@@ -61,19 +61,22 @@ public class OnboardingAuthenticationProvider implements AuthenticationProvider 
         authenticationSession.setOnboardingCompleted(true);
 
         // Build authorities based on completed steps
-        List<SimpleGrantedAuthority> authorities = List.of(
-            new SimpleGrantedAuthority("STEP_1_COMPLETED"),
-            new SimpleGrantedAuthority("STEP_3_COMPLETED"), // Onboarding completed
-            new SimpleGrantedAuthority("ROLE_USER"),
-            new SimpleGrantedAuthority("FULLY_AUTHENTICATED")
-        );
+        List<SimpleGrantedAuthority> authorities;
         
-        // Add step 2 authority if OTP was enabled
         if (settingsService.isOtpEnabled()) {
+            // 3-step flow: Password + OTP + Onboarding
             authorities = List.of(
                 new SimpleGrantedAuthority("STEP_1_COMPLETED"),
                 new SimpleGrantedAuthority("STEP_2_COMPLETED"),
                 new SimpleGrantedAuthority("STEP_3_COMPLETED"),
+                new SimpleGrantedAuthority("ROLE_USER"),
+                new SimpleGrantedAuthority("FULLY_AUTHENTICATED")
+            );
+        } else {
+            // 2-step flow: Password + Onboarding (no OTP)
+            authorities = List.of(
+                new SimpleGrantedAuthority("STEP_1_COMPLETED"),
+                new SimpleGrantedAuthority("STEP_3_COMPLETED"), // Onboarding completed
                 new SimpleGrantedAuthority("ROLE_USER"),
                 new SimpleGrantedAuthority("FULLY_AUTHENTICATED")
             );
