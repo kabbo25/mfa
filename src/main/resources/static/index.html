@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3-Factor Authentication Demo</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: 'Arial', sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+        }
+        .container { 
+            background: white; 
+            padding: 50px; 
+            border-radius: 15px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 600px; 
+            text-align: center; 
+        }
+        .logo {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        h1 { 
+            color: #333; 
+            margin-bottom: 15px; 
+            font-size: 32px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 18px;
+            line-height: 1.6;
+        }
+        .features {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 40px;
+            text-align: left;
+        }
+        .feature {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .feature:last-child {
+            margin-bottom: 0;
+        }
+        .start-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 20px 40px;
+            font-size: 18px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            font-weight: bold;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .demo-flow {
+            margin-top: 40px;
+            padding: 30px;
+            background: #e7f3ff;
+            border-radius: 10px;
+        }
+        .flow-steps {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .flow-step {
+            flex: 1;
+            min-width: 150px;
+            text-align: center;
+        }
+        .step-number {
+            width: 40px;
+            height: 40px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            font-weight: bold;
+        }
+        .arrow {
+            font-size: 24px;
+            color: #667eea;
+        }
+        .test-credentials {
+            margin-top: 30px;
+            padding: 20px;
+            background: #fff3cd;
+            border-radius: 10px;
+            border: 1px solid #ffeaa7;
+        }
+        .test-credentials h3 {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+        .cred-item {
+            background: white;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: monospace;
+            border-left: 4px solid #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🔐</div>
+        <h1>3-Factor Authentication Demo</h1>
+        <p class="subtitle">
+            Experience a secure multi-step authentication system that prevents step jumping and enforces sequential verification.
+        </p>
+        
+        <div class="features">
+            <h3 style="margin-bottom: 20px; color: #333;">Security Features:</h3>
+            <div class="feature">
+                <span>🔒</span>
+                <span><strong>Step 1:</strong> Username & Password validation</span>
+            </div>
+            <div class="feature">
+                <span>📱</span>
+                <span><strong>Step 2:</strong> OTP (One-Time Password) verification</span>
+            </div>
+            <div class="feature">
+                <span>👤</span>
+                <span><strong>Step 3:</strong> Profile onboarding completion</span>
+            </div>
+            <div class="feature">
+                <span>🛡️</span>
+                <span><strong>Security:</strong> No step jumping allowed</span>
+            </div>
+            <div class="feature">
+                <span>⏱️</span>
+                <span><strong>Session:</strong> 30-minute timeout protection</span>
+            </div>
+        </div>
+        
+        <a href="/login" class="start-btn">🚀 Start Authentication</a>
+        
+        <div class="demo-flow">
+            <h3 style="margin-bottom: 20px; color: #0066cc;">Authentication Flow:</h3>
+            <div class="flow-steps">
+                <div class="flow-step">
+                    <div class="step-number">1</div>
+                    <div>Login</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="flow-step">
+                    <div class="step-number">2</div>
+                    <div>OTP</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="flow-step">
+                    <div class="step-number">3</div>
+                    <div>Profile</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="flow-step">
+                    <div class="step-number">✓</div>
+                    <div>Access</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-credentials">
+            <h3>🧪 Test Credentials</h3>
+            <div class="cred-item">
+                <strong>Admin:</strong> username: <code>admin</code> | password: <code>password123</code>
+            </div>
+            <div class="cred-item">
+                <strong>User:</strong> username: <code>user</code> | password: <code>userpass</code>
+            </div>
+            <p style="margin-top: 15px; color: #856404; font-size: 14px;">
+                💡 <strong>Note:</strong> OTP codes will be displayed in the server console logs
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Auto-redirect if user is already authenticated
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch('/auth/status', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                
+                if (data.currentState === 'FULLY_AUTHENTICATED') {
+                    window.location.href = '/dashboard';
+                } else if (data.currentState === 'OTP_VERIFIED') {
+                    window.location.href = '/onboarding';
+                } else if (data.currentState === 'USERNAME_PASSWORD_VERIFIED') {
+                    window.location.href = '/otp';
+                }
+            } catch (error) {
+                // User is not authenticated, stay on index page
+            }
+        });
+    </script>
+</body>
+</html>

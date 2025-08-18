@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3FA Login - Step 2</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: 'Arial', sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+        }
+        .container { 
+            background: white; 
+            padding: 40px; 
+            border-radius: 10px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            width: 400px; 
+            text-align: center; 
+        }
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        .step {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 10px;
+            font-weight: bold;
+            color: white;
+        }
+        .step.active { background: #667eea; }
+        .step.inactive { background: #ccc; }
+        .step.completed { background: #28a745; }
+        h1 { 
+            color: #333; 
+            margin-bottom: 20px; 
+            font-size: 24px;
+        }
+        .otp-info {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 25px;
+            color: #0066cc;
+        }
+        .form-group { 
+            margin-bottom: 20px; 
+            text-align: left; 
+        }
+        label { 
+            display: block; 
+            margin-bottom: 5px; 
+            color: #555; 
+            font-weight: bold;
+        }
+        input { 
+            width: 100%; 
+            padding: 12px; 
+            border: 2px solid #ddd; 
+            border-radius: 5px; 
+            font-size: 18px;
+            text-align: center;
+            letter-spacing: 2px;
+            transition: border-color 0.3s;
+        }
+        input:focus { 
+            outline: none; 
+            border-color: #667eea; 
+        }
+        button { 
+            width: 100%; 
+            padding: 12px; 
+            background: #667eea; 
+            color: white; 
+            border: none; 
+            border-radius: 5px; 
+            font-size: 16px; 
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-bottom: 10px;
+        }
+        button:hover { 
+            background: #5a6fd8; 
+        }
+        button:disabled { 
+            background: #ccc; 
+            cursor: not-allowed; 
+        }
+        .back-btn {
+            background: #6c757d;
+        }
+        .back-btn:hover {
+            background: #5a6268;
+        }
+        .message { 
+            margin-top: 15px; 
+            padding: 10px; 
+            border-radius: 5px; 
+            display: none;
+        }
+        .error { 
+            background: #ffe6e6; 
+            color: #d00; 
+            border: 1px solid #fcc; 
+        }
+        .success { 
+            background: #e6ffe6; 
+            color: #060; 
+            border: 1px solid #cfc; 
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="step-indicator">
+            <div class="step completed">1</div>
+            <div class="step active">2</div>
+            <div class="step inactive">3</div>
+        </div>
+        
+        <h1>Step 2: OTP Verification</h1>
+        
+        <div class="otp-info">
+            📱 Check your console output for the 6-digit OTP code.<br>
+            The OTP has been printed in the server logs.
+        </div>
+        
+        <form id="otpForm">
+            <div class="form-group">
+                <label for="otp">Enter 6-digit OTP:</label>
+                <input type="text" id="otp" name="otp" maxlength="6" pattern="[0-9]{6}" required>
+            </div>
+            <button type="submit" id="verifyBtn">Verify OTP</button>
+        </form>
+        
+        <button type="button" class="back-btn" onclick="window.location.href='/login'">Back to Login</button>
+        
+        <div id="message" class="message"></div>
+    </div>
+
+    <script>
+        // Auto-format OTP input
+        document.getElementById('otp').addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/\D/g, '');
+        });
+
+        // Check authentication status on page load
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch('/auth/status', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                
+                if (data.currentState !== 'USERNAME_PASSWORD_VERIFIED') {
+                    window.location.href = '/login';
+                }
+            } catch (error) {
+                console.error('Status check failed:', error);
+                window.location.href = '/login';
+            }
+        });
+
+        document.getElementById('otpForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const otp = document.getElementById('otp').value;
+            const verifyBtn = document.getElementById('verifyBtn');
+            const message = document.getElementById('message');
+            
+            if (otp.length !== 6) {
+                message.className = 'message error';
+                message.textContent = 'Please enter a 6-digit OTP';
+                message.style.display = 'block';
+                return;
+            }
+            
+            // Disable button and show loading
+            verifyBtn.disabled = true;
+            verifyBtn.textContent = 'Verifying...';
+            message.style.display = 'none';
+            
+            try {
+                const response = await fetch('/auth/otp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ otp })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    message.className = 'message success';
+                    message.textContent = 'OTP verified! Redirecting to onboarding...';
+                    message.style.display = 'block';
+                    
+                    setTimeout(() => {
+                        window.location.href = '/onboarding';
+                    }, 1000);
+                } else {
+                    message.className = 'message error';
+                    message.textContent = data.error || 'OTP verification failed';
+                    message.style.display = 'block';
+                    
+                    // If session was reset, redirect to login
+                    if (data.error && data.error.includes('Invalid OTP')) {
+                        setTimeout(() => {
+                            window.location.href = '/login';
+                        }, 2000);
+                    }
+                }
+            } catch (error) {
+                message.className = 'message error';
+                message.textContent = 'Network error. Please try again.';
+                message.style.display = 'block';
+            } finally {
+                verifyBtn.disabled = false;
+                verifyBtn.textContent = 'Verify OTP';
+            }
+        });
+    </script>
+</body>
+</html>
