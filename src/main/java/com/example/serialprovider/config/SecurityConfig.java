@@ -1,6 +1,6 @@
 package com.example.serialprovider.config;
 
-import com.example.serialprovider.auth.MultiFactorAuthenticationManager;
+import com.example.serialprovider.auth.StepBasedAuthenticationManager;
 import com.example.serialprovider.auth.authorization.AdminAuthorizationManager;
 import com.example.serialprovider.auth.authorization.ApiAuthorizationManager;
 import com.example.serialprovider.auth.authorization.OnboardingAuthorizationManager;
@@ -17,7 +17,7 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity(debug = false)
 public class SecurityConfig {
 
-    private final MultiFactorAuthenticationManager authenticationManager;
+    private final StepBasedAuthenticationManager authenticationManager;
     private final MultiFactorAuthenticationSuccessHandler successHandler;
     private final MultiFactorAuthenticationFailureHandler failureHandler;
     private final AdminAuthorizationManager adminAuthorizationManager;
@@ -25,7 +25,7 @@ public class SecurityConfig {
     private final OtpAuthorizationManager otpAuthorizationManager;
     private final OnboardingAuthorizationManager onboardingAuthorizationManager;
 
-    public SecurityConfig(MultiFactorAuthenticationManager authenticationManager,
+    public SecurityConfig(StepBasedAuthenticationManager authenticationManager,
                            MultiFactorAuthenticationSuccessHandler successHandler,
                            MultiFactorAuthenticationFailureHandler failureHandler,
                            AdminAuthorizationManager adminAuthorizationManager,

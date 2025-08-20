@@ -1,6 +1,6 @@
 package com.example.serialprovider.controller;
 
-import com.example.serialprovider.auth.MultiFactorAuthenticationManager;
+import com.example.serialprovider.auth.StepBasedAuthenticationManager;
 import com.example.serialprovider.auth.handler.MultiFactorAuthenticationFailureHandler;
 import com.example.serialprovider.auth.handler.MultiFactorAuthenticationSuccessHandler;
 import com.example.serialprovider.auth.token.OnboardingAuthenticationToken;
@@ -24,13 +24,13 @@ import jakarta.servlet.ServletException;
 @RequestMapping("/auth")
 public class AuthController {
 
-    private final MultiFactorAuthenticationManager authenticationManager;
+    private final StepBasedAuthenticationManager authenticationManager;
     private final MultiFactorAuthenticationSuccessHandler successHandler;
     private final MultiFactorAuthenticationFailureHandler failureHandler;
     private final AuthenticationSession authenticationSession;
     private final AuthenticationSettingsService settingsService;
 
-    public AuthController(MultiFactorAuthenticationManager authenticationManager,
+    public AuthController(StepBasedAuthenticationManager authenticationManager,
                            MultiFactorAuthenticationSuccessHandler successHandler,
                            MultiFactorAuthenticationFailureHandler failureHandler,
                            AuthenticationSession authenticationSession,

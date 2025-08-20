@@ -1,8 +1,8 @@
 package com.example.serialprovider.auth.handler;
 
 import com.example.serialprovider.auth.AuthenticationSession;
-import com.example.serialprovider.auth.AuthenticationState;
-import com.example.serialprovider.service.AuthenticationSettingsService;
+import com.example.serialprovider.auth.step.AuthenticationStep;
+import com.example.serialprovider.auth.step.AuthenticationStepChain;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,114 +15,96 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
 
 @Component
 public class MultiFactorAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
 
     private final AuthenticationSession authenticationSession;
-    private final AuthenticationSettingsService settingsService;
+    private final AuthenticationStepChain stepChain;
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final AuthenticationSuccessHandler primarySuccessHandler;
-    private final AuthenticationSuccessHandler otpSuccessHandler;
-    private final AuthenticationSuccessHandler onboardingSuccessHandler;
+    private final AuthenticationSuccessHandler dashboardSuccessHandler;
 
     public MultiFactorAuthenticationSuccessHandler(AuthenticationSession authenticationSession,
-                                                 AuthenticationSettingsService settingsService) {
+                                                 AuthenticationStepChain stepChain) {
         this.authenticationSession = authenticationSession;
-        this.settingsService = settingsService;
-        this.primarySuccessHandler = new SimpleUrlAuthenticationSuccessHandler("/dashboard");
-        this.otpSuccessHandler = new SimpleUrlAuthenticationSuccessHandler("/otp");
-        this.onboardingSuccessHandler = new SimpleUrlAuthenticationSuccessHandler("/onboarding");
+        this.stepChain = stepChain;
+        this.dashboardSuccessHandler = new SimpleUrlAuthenticationSuccessHandler("/dashboard");
     }
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                       Authentication authentication) throws IOException, ServletException {
         
-        AuthenticationState currentState = authenticationSession.getState();
+        // Use the step chain to determine what happens next
+        Optional<AuthenticationStep> nextStepOpt = stepChain.getNextStep(authenticationSession);
         
-        // Intelligent routing based on authentication state and user settings
-        // Similar to the TwoFactorAuthenticationSuccessHandler pattern
-        
-        if (currentState == AuthenticationState.USERNAME_PASSWORD_VERIFIED) {
-            // After password authentication, check what's next
-            if (multiFactorRequired()) {
-                String nextStep = getNextRequiredStep();
-                if ("otp".equals(nextStep)) {
-                    // Store intermediate authentication for OTP step
-                    SecurityContextHolder.getContext().setAuthentication(
-                        createIntermediateAuthentication(authentication, "PASSWORD_VERIFIED")
-                    );
-                    sendJsonResponse(response, "Credentials verified. OTP sent.", "otp");
-                    return;
-                } else if ("onboarding".equals(nextStep)) {
-                    // Store intermediate authentication for onboarding step
-                    SecurityContextHolder.getContext().setAuthentication(
-                        createIntermediateAuthentication(authentication, "PASSWORD_VERIFIED")
-                    );
-                    sendJsonResponse(response, "Credentials verified. Please complete onboarding.", "onboarding");
-                    return;
-                }
-            }
-            // If no additional steps required, proceed to dashboard
-            this.primarySuccessHandler.onAuthenticationSuccess(request, response, authentication);
-            return;
-        }
-        
-        if (currentState == AuthenticationState.OTP_VERIFIED) {
-            // After OTP verification, check if onboarding is required
-            if (settingsService.isOnboardingEnabled()) {
-                // Store intermediate authentication for onboarding step
-                SecurityContextHolder.getContext().setAuthentication(
-                    createIntermediateAuthentication(authentication, "OTP_VERIFIED")
+        if (nextStepOpt.isPresent()) {
+            // There are more authentication steps to complete
+            AuthenticationStep nextStep = nextStepOpt.get();
+            
+            // Store intermediate authentication to prevent access to protected resources
+            SecurityContextHolder.getContext().setAuthentication(
+                createIntermediateAuthentication(authentication, "PARTIAL_AUTH")
+            );
+            
+            // Send JSON response with next step information
+            sendJsonResponse(response, 
+                nextStep.getSuccessMessage(), 
+                nextStep.getStepId(),
+                false // Not fully authenticated yet
+            );
+        } else {
+            // All authentication steps completed
+            if (stepChain.isFullyAuthenticated(authenticationSession)) {
+                sendJsonResponse(response, 
+                    "Authentication completed successfully!", 
+                    "dashboard",
+                    true // Fully authenticated
                 );
-                sendJsonResponse(response, "OTP verified. Please complete onboarding.", "onboarding");
-                return;
+            } else {
+                // Something went wrong - redirect to login
+                sendJsonResponse(response, 
+                    "Please start authentication.", 
+                    "login",
+                    false
+                );
             }
-            // If no onboarding required, proceed to dashboard
-            this.primarySuccessHandler.onAuthenticationSuccess(request, response, authentication);
-            return;
         }
-        
-        if (currentState == AuthenticationState.FULLY_AUTHENTICATED) {
-            // All authentication steps completed, send JSON response
-            sendJsonResponse(response, "Authentication completed successfully!", "dashboard");
-            return;
-        }
-        
-        // Default case - redirect to login
-        sendJsonResponse(response, "Please start authentication.", "login");
     }
     
-    private boolean multiFactorRequired() {
-        return settingsService.isOtpEnabled() || settingsService.isOnboardingEnabled();
-    }
-    
-    private String getNextRequiredStep() {
-        if (settingsService.isOtpEnabled()) {
-            return "otp";
-        } else if (settingsService.isOnboardingEnabled()) {
-            return "onboarding";
-        }
-        return "dashboard";
-    }
-    
+    /**
+     * Create an intermediate authentication token that indicates partial completion.
+     * This prevents access to protected resources until full authentication is complete.
+     */
     private Authentication createIntermediateAuthentication(Authentication originalAuth, String step) {
-        // Create an intermediate authentication token that indicates partial completion
-        // This prevents access to protected resources until full authentication is complete
         return new org.springframework.security.authentication.AnonymousAuthenticationToken(
             step, originalAuth.getPrincipal(), originalAuth.getAuthorities()
         );
     }
     
-    private void sendJsonResponse(HttpServletResponse response, String message, String nextStep) throws IOException {
+    /**
+     * Send a standardized JSON response with authentication progress information
+     */
+    private void sendJsonResponse(HttpServletResponse response, String message, String nextStep, boolean fullyAuthenticated) throws IOException {
         response.setContentType("application/json");
+        
+        // Get authentication progress
+        AuthenticationStepChain.AuthenticationProgress progress = stepChain.getProgress(authenticationSession);
+        
         Map<String, Object> responseBody = Map.of(
             "message", message,
             "nextStep", nextStep,
-            "currentState", authenticationSession.getState(),
-            "user", authenticationSession.getUsername() != null ? authenticationSession.getUsername() : "null"
+            "fullyAuthenticated", fullyAuthenticated,
+            "progress", Map.of(
+                "completedSteps", progress.getCompletedSteps(),
+                "totalSteps", progress.getTotalSteps(),
+                "percentage", Math.round(progress.getProgressPercentage())
+            ),
+            "user", authenticationSession.getUsername() != null ? authenticationSession.getUsername() : "null",
+            "flowDescription", stepChain.getFlowDescription()
         );
+        
         objectMapper.writeValue(response.getWriter(), responseBody);
     }
 }
